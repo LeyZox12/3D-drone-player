@@ -8,6 +8,8 @@ typedef Vector3 vec3;
 
 const int RECT_SIZE = 100;
 const float DRONE_SCALE = 3.0f;
+const float AIR_FRICTION = 100.f;
+const float MULT = 150.f;
 
 PointEngine pe;
 
@@ -25,8 +27,9 @@ vec3 move = vec3(0, 0, 0);
 
 int main(void)
 {
-    pe.addRectangle(-2.5, -2.5, -2.5, 10.0, 1.5, 10.0);
+    float steer = 0.0;
     float rad = 0.5f;
+    pe.addRectangle(0, 0, 0, 0, 0, 0);
     pe.addPoint(vec3(-DRONE_SCALE, 0.0, -DRONE_SCALE), false, false, rad, 200.f, RED);
     pe.addPoint(vec3(-DRONE_SCALE, 0.0, DRONE_SCALE), false, false, rad, 200.f, RED);
     pe.addPoint(vec3(DRONE_SCALE, 0.0, DRONE_SCALE), false, false, rad, 200.f, RED);
@@ -38,8 +41,17 @@ int main(void)
         pe.addConstraint(i, j, 2, 0.0);
     }
     
-    Point* backLeft,backRight,frontLeft,frontRight,center;
-    backLeft =;
+    Point* backLeft;
+    Point* backRight;
+    Point* frontLeft;
+    Point* frontRight;
+    Point* center;
+
+    backLeft = &pe.getPoint(1);
+    backRight = &pe.getPoint(2);
+    frontLeft = &pe.getPoint(0);
+    frontRight = &pe.getPoint(3);
+    center = &pe.getPoint(4);
 
     // Initialization
     //--------------------------------------------------------------------------------------
@@ -50,7 +62,6 @@ int main(void)
 
     Camera3D camera = { 0 };
     camera.position = (Vector3){ 0.0f, 10.0f, 10.0f };
-    camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;                   
     camera.projection = CAMERA_PERSPECTIVE;
@@ -61,29 +72,37 @@ int main(void)
 
     while (!WindowShouldClose())
     {
+        camera.position = center->getPos() + vec3(0, 10, 10);
+        camera.target = center->getPos();
         float dt = 1.0 / 60.f;
         if(dt < 1.0)
         {
             if(IsKeyDown(KEY_D))
             {
-                vec3 acc = vec3(0, 100.f, 0);
-                pe.getPoint(0).setAcc(acc);
-                pe.getPoint(1).setAcc(acc);
+                vec3 acc = vec3(0, MULT, 0);
+                frontLeft->setAcc(acc);
+                backLeft->setAcc(acc);
             }
             else 
             if(IsKeyDown(KEY_Q))
             {
-                vec3 acc = vec3(0, 100.f, 0);
-                pe.getPoint(2).setAcc(acc);
-                pe.getPoint(3).setAcc(acc);
+                vec3 acc = vec3(0, MULT, 0);
+                frontRight->setAcc(acc);
+                backRight->setAcc(acc);
             }
             else if(IsKeyDown(KEY_SPACE))
             {
-                vec3 acc = vec3(0, 100.f, 0);
-                pe.getPoint(0).setAcc(acc);
-                pe.getPoint(1).setAcc(acc);
-                pe.getPoint(2).setAcc(acc);
-                pe.getPoint(3).setAcc(acc);
+                vec3 acc = vec3(0, MULT, 0);
+                frontRight->setAcc(acc);
+                frontLeft->setAcc(acc);
+                backLeft->setAcc(acc);
+                backRight->setAcc(acc);
+            }
+            for(int i = 0; i < 4; i++)
+            {
+                Point* p = &pe.getPoint(i);
+                vec3 acc = p->getOldPos() - p->getPos();
+                p->addAcc(vec3(acc.x, 0.0, acc.z) * AIR_FRICTION);
             }
             pe.updatePointPos(dt);
             pe.applyCollisions(4);
@@ -91,7 +110,6 @@ int main(void)
             BeginDrawing();
                 ClearBackground(RAYWHITE);
                 BeginMode3D(camera);
-                    DrawCube(cubePosition, 2.0f, 0.5f, 2.0f, RED);
                     pe.display(BLACK);
                     DrawGrid(10, 1.5f);
                 EndMode3D();

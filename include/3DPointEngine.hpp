@@ -554,7 +554,12 @@ class PointEngine
                             p.setPos({rectangles[r].getRect().position.x - p.getRadius(), p.getPos().y}, false);
                             p.setAcc({0, p.getAcc().y});
                         }*/
-                        if(p.getPos().y < -1.5f) p.setPos(vec3(p.getPos().x, -1.5f, p.getPos().z), false);
+                        if(p.getPos().y < -1.5f)
+                        {
+                            p.setPos(vec3(p.getPos().x, -1.5f, p.getPos().z), false);
+                            vec3 acc = p.getAcc();
+                            p.setAcc(vec3(acc.x, 0.0, acc.z));
+                        }
                     }
                 }
             }
